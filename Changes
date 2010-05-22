@@ -1,0 +1,17 @@
+Revision history for Markup-Unified
+
+0.03	2010-05-23, 10:30:00
+	- added the on_space option to HTML::Truncate, so that words are
+	  are not cut-off when truncating
+
+0.02	2010-05-22, 20:15:00
+	- Switched from Moose to Class::Accessor for a smaller dependency chain
+	- Made all markup modules optional instead of required
+	- Added the ability to truncate the formatted text with HTML::Truncate
+	- Added a method for checking whether a markup language is supported
+	- Makefile.PL now uses Module::Install
+	- Created simple tests
+
+0.01    2009-09-29, 18:00:00
+        First version.
+
