@@ -64,11 +64,11 @@ board where users have the ability to post with their preferred markup language.
 Please note that this module expects your texts to be UTF-8.
 
 In order for this module to be useful at any way, at least one of the three
-parsing modules (L<Text::Textile>, L<Text::Markdown> or L<HTML::BBCode>
+parsing modules (L<Text::Textile>, L<Text::Markdown> or L<HTML::BBCode>)
 must be installed. None of these are required, but if you try to parse
 a text formatted in any of these markup languages without the respective
 module being installed on your system, then the text will be returned
-unformatted.
+unformatted, and no errors will be raised.
 
 =head1 METHODS
 
@@ -130,23 +130,24 @@ sub unformatted { $_[0]->value; }
 =head2 truncate([ $length_str, $ellipsis ])
 
 NOTE: This feature requires the presence of the L<HTML::Truncate> module.
-If it is not installed, this method will simply return the object's
-formatted text without raising any error.
+If it is not installed, this method will simply return the output of the
+L<formatted()> method without raising any errors.
 
 This method returns the formatted text of the object, truncated according to the
-provided length string. This string should be a number following by one
+provided length string. This string should be a number followed by one
 of the characters 'c' or '%'. For example, C<$length_str = '250c'> will
 return 250 characters from the object's text. C<$length_str = '10%'> will
 return 10% of the object's text (characterwise). If a length string is
-not provided, text will be truncated to 250 characters by default.
+not provided, the text will be truncated to 250 characters by default.
 
 This is useful when you wish to display just a sample of the text, such
 as in a list of blog posts, where every listing displays a portion of the
-post's text with a "Read More" link to the full text.
+post's text with a "Read More" link to the full text in the end.
 
 If an C<$ellipsis> is provided, it will be used as the text that will be
-appended to the truncated HTML. Read L<HTML::Truncate> for more info,
-defaults to &#8230; (HTML entity for the '...' ellipsis character).
+appended to the truncated HTML (i.e. "Read More"). Read L<HTML::Truncate>'s
+documentation for more info. Defaults to &#8230; (HTML entity for the
+'...' ellipsis character).
 
 =cut
 
@@ -171,7 +172,7 @@ sub truncate {
 
 Returns a true value if the requested markup language is supported by
 this module (which basically means the appropriate module is installed
-and loaded). C<$markup_lang> must be one of textile, bbcode or markdown
+and loaded). C<$markup_lang> must be one of 'textile', 'bbcode' or 'markdown'
 (case insensitive).
 
 Returns a false value if the requested language is not supported.

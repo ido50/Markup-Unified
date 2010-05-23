@@ -1,43 +1,144 @@
-Markup-Unified
+NAME
+    Markup::Unified - A simple, unified interface for Textile, Markdown and
+    BBCode.
 
-INSTALLATION
+VERSION
+    Version 0.03
 
-To install this module, run the following commands:
+SYNOPSIS
+        use Markup::Unified;
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+        my $o = Markup::Unified->new();
+        my $text = 'h1. A heading';
+        $o->format($text, 'textile');
 
-SUPPORT AND DOCUMENTATION
+        print $o->formatted; # produces "<h1>A heading</h1>"
+        print $o->unformatted; # produces "h1. A heading"
 
-After installing, you can find documentation for this module with the
-perldoc command.
+        # you can also just say:
+        print $o; # same as "print $o->formatted;"
 
-    perldoc Markup::Unified
+DESCRIPTION
+    This module provides a simple, unified interface for the Text::Textile,
+    Text::Markdown and HTML::BBCode markup languages modules. This module is
+    primarily meant to provide a simple way for application developers to
+    deal with texts that use different markup languages, for example, a
+    message board where users have the ability to post with their preferred
+    markup language.
 
-You can also look for information at:
+    Please note that this module expects your texts to be UTF-8.
 
-    RT, CPAN's request tracker
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Markup-Unified
+    In order for this module to be useful at any way, at least one of the
+    three parsing modules (Text::Textile, Text::Markdown or HTML::BBCode)
+    must be installed. None of these are required, but if you try to parse a
+    text formatted in any of these markup languages without the respective
+    module being installed on your system, then the text will be returned
+    unformatted, and no errors will be raised.
 
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/Markup-Unified
+METHODS
+new()
+    Creates a new, empty instance of Markup::Unified.
 
-    CPAN Ratings
-        http://cpanratings.perl.org/d/Markup-Unified
+  format( $text, $markup_lang )
+    Formats the provided text with the provided markup language.
+    $markup_lang must be one of 'bbcode', 'textile' or 'markdown' (case
+    insensitive); otherwise the text will remain unprocessed (which is also
+    true if the appropriate markup module is not installed on your system).
 
-    Search CPAN
-        http://search.cpan.org/dist/Markup-Unified/
+  formatted()
+    Returns the formatted text of the object, with whatever markup language
+    it was set.
 
+    This module also provides the ability to print the formatted version of
+    an object without calling "formatted()" explicitly, so you can just use
+    "print $obj".
 
-COPYRIGHT AND LICENCE
+  unformatted()
+    Returns the unformatted text of the object.
 
-Copyright (C) 2009 Ido Perlmuter
+  truncate([ $length_str, $ellipsis ])
+    NOTE: This feature requires the presence of the HTML::Truncate module.
+    If it is not installed, this method will simply return the output of the
+    formatted() method without raising any errors.
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
+    This method returns the formatted text of the object, truncated
+    according to the provided length string. This string should be a number
+    followed by one of the characters 'c' or '%'. For example, "$length_str
+    = '250c'" will return 250 characters from the object's text.
+    "$length_str = '10%'" will return 10% of the object's text
+    (characterwise). If a length string is not provided, the text will be
+    truncated to 250 characters by default.
 
-See http://dev.perl.org/licenses/ for more information.
+    This is useful when you wish to display just a sample of the text, such
+    as in a list of blog posts, where every listing displays a portion of
+    the post's text with a "Read More" link to the full text in the end.
+
+    If an $ellipsis is provided, it will be used as the text that will be
+    appended to the truncated HTML (i.e. "Read More"). Read HTML::Truncate's
+    documentation for more info. Defaults to &#8230; (HTML entity for the
+    '...' ellipsis character).
+
+  supports( $markup_lang )
+    Returns a true value if the requested markup language is supported by
+    this module (which basically means the appropriate module is installed
+    and loaded). $markup_lang must be one of 'textile', 'bbcode' or
+    'markdown' (case insensitive).
+
+    Returns a false value if the requested language is not supported.
+
+INTERNAL METHODS
+  _bbcode( $text )
+    Formats $text with HTML::BBCode.
+
+  _textile( $text )
+    Formats $text with Text::Textile.
+
+  _markdown( $text )
+    Formats $text with Text::Markdown.
+
+AUTHOR
+    Ido Perlmuter, "<ido at ido50.net>"
+
+BUGS
+    Please report any bugs or feature requests to "bug-markup-unified at
+    rt.cpan.org", or through the web interface at
+    <http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Markup-Unified>. I will
+    be notified, and then you'll automatically be notified of progress on
+    your bug as I make changes.
+
+SUPPORT
+    You can find documentation for this module with the perldoc command.
+
+        perldoc Markup::Unified
+
+    You can also look for information at:
+
+    *   RT: CPAN's request tracker
+
+        <http://rt.cpan.org/NoAuth/Bugs.html?Dist=Markup-Unified>
+
+    *   AnnoCPAN: Annotated CPAN documentation
+
+        <http://annocpan.org/dist/Markup-Unified>
+
+    *   CPAN Ratings
+
+        <http://cpanratings.perl.org/d/Markup-Unified>
+
+    *   Search CPAN
+
+        <http://search.cpan.org/dist/Markup-Unified/>
+
+SEE ALSO
+    Text::Textile, Text::Markdown, HTML::BBCode, HTML::Truncate,
+    DBIx::Class::InflateColumn::Markup::Unified
+
+COPYRIGHT & LICENSE
+    Copyright 2009-2010 Ido Perlmuter.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of either: the GNU General Public License as published
+    by the Free Software Foundation; or the Artistic License.
+
+    See http://dev.perl.org/licenses/ for more information.
 
