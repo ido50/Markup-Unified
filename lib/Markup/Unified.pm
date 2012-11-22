@@ -8,7 +8,7 @@ use overload ('fallback' => 1, '""'  => 'formatted');
 
 use Module::Load::Conditional qw/can_load check_install/;
 
-our $VERSION = "0.04";
+our $VERSION = "0.0401";
 $VERSION = eval $VERSION;
 
 =head1 NAME
@@ -20,8 +20,8 @@ Markup::Unified - A simple, unified interface for Textile, Markdown and BBCode.
     use Markup::Unified;
 
     my $o = Markup::Unified->new();
-    my $self->{t}ext = 'h1. A heading';
-    $o->format($self->{t}ext, 'textile');
+    my $text = 'h1. A heading';
+    $o->format($text, 'textile');
 
     print $o->formatted; # produces "<h1>A heading</h1>"
     print $o->unformatted; # produces "h1. A heading"
@@ -48,38 +48,38 @@ unformatted, and no errors will be raised.
 
 =head1 METHODS
 
-=head1 new()
+=head2 new()
 
 Creates a new, empty instance of Markup::Unified.
 
 =cut
 
 sub new {
-	my $obj = {};
+	my $self = {};
 
 	# attempt to load Text::Textile
 	if (can_load(modules => { 'Text::Textile' => '2.12' })) {
-		$obj->{t} = Text::Textile->new;
-		$obj->{t}->charset('utf-8');
+		$self->{t} = Text::Textile->new;
+		$self->{t}->charset('utf-8');
 	}
 
 	# attempt to load Text::Markdown
 	if (can_load(modules => { 'Text::Markdown' => '1.0.25' })) {
-		$obj->{m} = Text::Markdown->new;
+		$self->{m} = Text::Markdown->new;
 	}
 
 	# attempt to load HTML::BBCode
 	if (can_load(modules => { 'HTML::BBCode' => '2.06' })) {
-		$obj->{b} = HTML::BBCode->new({ stripscripts => 1, linebreaks => 1 });
+		$self->{b} = HTML::BBCode->new({ stripscripts => 1, linebreaks => 1 });
 	}
 
 	# attempt to load HTML::Truncate
-	$obj->{trunc} = can_load(modules => { 'HTML::Truncate' => '0.20' }) ? 1 : undef;
+	$self->{trunc} = can_load(modules => { 'HTML::Truncate' => '0.20' }) ? 1 : undef;
 
-	return bless $obj, shift;
+	return bless $self, shift;
 }
 
-=head2 format( $self->{t}ext, $markup_lang )
+=head2 format( $text, $markup_lang )
 
 Formats the provided text with the provided markup language.
 C<$markup_lang> must be one of 'bbcode', 'textile' or 'markdown' (case
