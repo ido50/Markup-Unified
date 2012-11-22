@@ -1,6 +1,8 @@
 Revision history for Markup-Unified
 
 {{$NEXT}}
+
+0.04      2012-11-22 21:44:57 Asia/Jerusalem
 	- Removed Class::Accessor dependency
 	- Migrated distribution to Dist::Zilla
 
