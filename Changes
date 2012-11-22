@@ -1,5 +1,9 @@
 Revision history for Markup-Unified
 
+{{$NEXT}}
+	- Removed Class::Accessor dependency
+	- Migrated distribution to Dist::Zilla
+
 0.03	2010-05-23, 10:30:00
 	- Added the on_space option to HTML::Truncate, so that words are
 	  are not cut-off when truncating

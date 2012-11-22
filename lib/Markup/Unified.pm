@@ -1,51 +1,27 @@
 package Markup::Unified;
 
-use strict;
+#  ABSTRACT: A simple, unified interface for Textile, Markdown and BBCode.
+
 use warnings;
-use base qw(Class::Accessor);
+use strict;
+use overload ('fallback' => 1, '""'  => 'formatted');
+
 use Module::Load::Conditional qw/can_load check_install/;
 
-use overload	(	'fallback' => 1,
-			'""'  => 'formatted',
-		);
-
-__PACKAGE__->mk_accessors(qw/value fvalue/);
+our $VERSION = "0.04";
+$VERSION = eval $VERSION;
 
 =head1 NAME
 
 Markup::Unified - A simple, unified interface for Textile, Markdown and BBCode.
-
-=head1 VERSION
-
-Version 0.03
-
-=cut
-
-our $VERSION = 0.03;
-
-# attempt to load Text::Textile
-our $t = undef;
-if (can_load(modules => { 'Text::Textile' => '2.12' })) {
-	$t = Text::Textile->new();
-	$t->charset('utf-8');
-}
-
-# attempt to load Text::Markdown
-our $m = can_load(modules => { 'Text::Markdown' => '1.0.25' }) ? Text::Markdown->new() : undef;
-
-# attempt to load HTML::BBCode
-our $b = can_load(modules => { 'HTML::BBCode' => '2.06' }) ? HTML::BBCode->new({ stripscripts => 1, linebreaks => 1 }) : undef;
-
-# attempt to load HTML::Truncate
-our $trunc = can_load(modules => { 'HTML::Truncate' => '0.20' }) ? 1 : undef;
 
 =head1 SYNOPSIS
 
     use Markup::Unified;
 
     my $o = Markup::Unified->new();
-    my $text = 'h1. A heading';
-    $o->format($text, 'textile');
+    my $self->{t}ext = 'h1. A heading';
+    $o->format($self->{t}ext, 'textile');
 
     print $o->formatted; # produces "<h1>A heading</h1>"
     print $o->unformatted; # produces "h1. A heading"
@@ -76,7 +52,34 @@ unformatted, and no errors will be raised.
 
 Creates a new, empty instance of Markup::Unified.
 
-=head2 format( $text, $markup_lang )
+=cut
+
+sub new {
+	my $obj = {};
+
+	# attempt to load Text::Textile
+	if (can_load(modules => { 'Text::Textile' => '2.12' })) {
+		$obj->{t} = Text::Textile->new;
+		$obj->{t}->charset('utf-8');
+	}
+
+	# attempt to load Text::Markdown
+	if (can_load(modules => { 'Text::Markdown' => '1.0.25' })) {
+		$obj->{m} = Text::Markdown->new;
+	}
+
+	# attempt to load HTML::BBCode
+	if (can_load(modules => { 'HTML::BBCode' => '2.06' })) {
+		$obj->{b} = HTML::BBCode->new({ stripscripts => 1, linebreaks => 1 });
+	}
+
+	# attempt to load HTML::Truncate
+	$obj->{trunc} = can_load(modules => { 'HTML::Truncate' => '0.20' }) ? 1 : undef;
+
+	return bless $obj, shift;
+}
+
+=head2 format( $self->{t}ext, $markup_lang )
 
 Formats the provided text with the provided markup language.
 C<$markup_lang> must be one of 'bbcode', 'textile' or 'markdown' (case
@@ -88,19 +91,19 @@ true if the appropriate markup module is not installed on your system).
 sub format {
 	my ($self, $text, $markup_lang) = @_;
 
-	$self->value($text); # keep unformatted text
+	$self->{value} = $text; # keep unformatted text
 
 	# format according to the formatter
 	if ($markup_lang && $markup_lang =~ m/^bbcode/i) {
-		$self->fvalue($self->_bbcode($text));
+		$self->{fvalue} = $self->_bbcode($text);
 	} elsif ($markup_lang && $markup_lang =~ m/^textile/i) {
-		$self->fvalue($self->_textile($text));
+		$self->{fvalue} = $self->_textile($text);
 	} elsif ($markup_lang && $markup_lang =~ m/^markdown/i) {
-		$self->fvalue($self->_markdown($text));
+		$self->{fvalue} = $self->_markdown($text);
 	} else {
 		# either no markup language given or unrecognized language
 		# so formatted = unformatted
-		$self->fvalue($text);
+		$self->{fvalue} = $text;
 	}
 
 	return $self;
@@ -117,7 +120,7 @@ C<print $obj>.
 
 =cut
 
-sub formatted { $_[0]->fvalue; }
+sub formatted { $_[0]->{fvalue} }
 
 =head2 unformatted()
 
@@ -125,7 +128,7 @@ Returns the unformatted text of the object.
 
 =cut
 
-sub unformatted { $_[0]->value; }
+sub unformatted { $_[0]->{value} }
 
 =head2 truncate([ $length_str, $ellipsis ])
 
@@ -156,7 +159,7 @@ sub truncate {
 
 	# make sure HTML::Truncate is loaded, otherwise just return the
 	# formatted text in its entirety
-	return $self->formatted unless $trunc;
+	return $self->formatted unless $self->{trunc};
 
 	my $ht = HTML::Truncate->new(utf8_mode => 1, on_space => 1);
 
@@ -182,108 +185,127 @@ Returns a false value if the requested language is not supported.
 sub supports {
 	my ($self, $markup_lang) = @_;
 
-	if ($markup_lang =~ m/^textile$/i) {
-		return $t ? 1 : undef;
-	} elsif ($markup_lang =~ m/^markdown$/i) {
-		return $m ? 1 : undef;
-	} elsif ($markup_lang =~ m/^bbcode$/i) {
-		return $b ? 1 : undef;
+	if ($markup_lang =~ m/^textile$/i && $self->{t}) {
+		return 1;
+	} elsif ($markup_lang =~ m/^markdown$/i && $self->{m}) {
+		return 1;
+	} elsif ($markup_lang =~ m/^bbcode$/i && $self->{b}) {
+		return 1;
 	}
 
-	return undef;
+	return;
 }
 
-=head1 INTERNAL METHODS
+##################################################
+#     INTERNAL METHODS                           #
+##################################################
 
-=head2 _bbcode( $text )
-
-Formats C<$text> with L<HTML::BBCode>.
-
-=cut
-
+# format BBCode
 sub _bbcode {
 	my ($self, $text) = @_;
 
-	return $b ? $b->parse($text) : $text;
+	return $self->{b} ? $self->{b}->parse($text) : $text;
 }
 
-=head2 _textile( $text )
-
-Formats C<$text> with L<Text::Textile>.
-
-=cut
-
+# format Textile
 sub _textile {
 	my ($self, $text) = @_;
 
-	return $t ? $t->textile($text) : $text;
+	return $self->{t} ? $self->{t}->textile($text) : $text;
 }
 
-=head2 _markdown( $text )
-
-Formats C<$text> with L<Text::Markdown>.
-
-=cut
-
+# format Markdown
 sub _markdown {
 	my ($self, $text) = @_;
 
-	return $m ? $m->markdown($text) : $text;
+	return $self->{m} ? $self->{m}->markdown($text) : $text;
 }
 
-=head1 AUTHOR
+=head1 DIAGNOSTICS
 
-Ido Perlmuter, C<< <ido at ido50.net> >>
+This module does not throw any exceptions (by itself).
 
-=head1 BUGS
+=head1 CONFIGURATION AND ENVIRONMENT
+  
+C<Markup::Unified> requires no configuration files or environment variables.
 
-Please report any bugs or feature requests to C<bug-markup-unified at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Markup-Unified>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+=head1 DEPENDENCIES
 
-=head1 SUPPORT
+C<Markup::Unified> B<depends> on the following CPAN modules:
 
-You can find documentation for this module with the perldoc command.
+=over
 
-    perldoc Markup::Unified
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Markup-Unified>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Markup-Unified>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Markup-Unified>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Markup-Unified/>
+=item * L<Module::Load::Conditional>
 
 =back
 
-=head1 SEE ALSO
+C<Markup::Unified> B<needs> one or more of these modules to actually be
+of any function:
 
-L<Text::Textile>, L<Text::Markdown>, L<HTML::BBCode>, L<HTML::Truncate>,
-L<DBIx::Class::InflateColumn::Markup::Unified>
+=over
 
-=head1 COPYRIGHT & LICENSE
+=item * L<Text::Textile>
 
-Copyright 2009-2010 Ido Perlmuter.
+=item * L<Text::Markdown>
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
+=item * L<HTML::BBCode>
 
-See http://dev.perl.org/licenses/ for more information.
+=item * L<HTML::Truncate>
+
+=back
+
+=head1 INCOMPATIBILITIES WITH OTHER MODULES
+
+None reported.
+
+=head1 BUGS AND LIMITATIONS
+
+No bugs have been reported.
+
+Please report any bugs or feature requests to
+C<bug-Markup-Unified@rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Markup-Unified>.
+
+=head1 AUTHOR
+
+Ido Perlmuter <ido at ido50 dot net>
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2009-2012, Ido Perlmuter C<< ido at ido50 dot net >>.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself, either version
+5.8.1 or any later version. See L<perlartistic|perlartistic> 
+and L<perlgpl|perlgpl>.
+
+The full text of the license can be found in the
+LICENSE file included with this module.
+
+=head1 DISCLAIMER OF WARRANTY
+
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
+OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
+YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
+OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
+RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
+SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
 
 =cut
 
-1; # End of Markup::Unified
+1;
+__END__
