@@ -1,6 +1,8 @@
 Revision history for Markup-Unified
 
 {{$NEXT}}
+
+1.000000  2015-03-03 20:39:37+02:00 Asia/Jerusalem
 	- No longer using taint mode in the tests
 	- Bumped version to 1.0.0
 
