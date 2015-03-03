@@ -6,9 +6,9 @@ use warnings;
 use strict;
 use overload ('fallback' => 1, '""'  => 'formatted');
 
-use Module::Load::Conditional qw/can_load check_install/;
+use Module::Load::Conditional qw/can_load/;
 
-our $VERSION = "0.0401";
+our $VERSION = "1.000000";
 $VERSION = eval $VERSION;
 
 =head1 NAME
@@ -272,7 +272,7 @@ Ido Perlmuter <ido at ido50 dot net>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2009-2012, Ido Perlmuter C<< ido at ido50 dot net >>.
+Copyright (c) 2009-2015, Ido Perlmuter C<< ido at ido50 dot net >>.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself, either version
